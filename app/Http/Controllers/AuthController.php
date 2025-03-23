@@ -20,7 +20,6 @@ class AuthController extends Controller
         ];
 
         try {
-            // Remplacez l'URL par votre API Spring Boot
             $response = Http::post('http://localhost:8080/api/auth/admin', $credentials);
             
             if ($response->successful()) {
@@ -28,7 +27,7 @@ class AuthController extends Controller
                 
                 if ($user) {
                     session(['user' => $user]);
-                    return redirect()->route('template')->with('success', 'Connexion réussie.');
+                    return redirect()->route('dashboard')->with('success', 'Connexion réussie.');
                 } else {
                     return back()->withErrors(['error' => 'Utilisateur non trouvé.']);
                 }
