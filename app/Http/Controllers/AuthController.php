@@ -21,15 +21,17 @@ class AuthController extends Controller
 
         try {
             // Remplacez l'URL par votre API Spring Boot
-            $response = Http::post('http://localhost:8080/api/auth/login', $credentials);
+            $response = Http::post('http://localhost:8080/api/auth/admin', $credentials);
             
             if ($response->successful()) {
-                $token = $response->json()['token'];
+                $user = $response->json();
                 
-                // Stocker le token dans la session Laravel
-                session(['jwt_token' => $token]);
-
-                return redirect()->route('template')->with('success', 'Connexion réussie.');
+                if ($user) {
+                    session(['user' => $user]);
+                    return redirect()->route('template')->with('success', 'Connexion réussie.');
+                } else {
+                    return back()->withErrors(['error' => 'Utilisateur non trouvé.']);
+                }
             } else {
                 return back()->withErrors(['error' => 'Nom d\'utilisateur ou mot de passe incorrect.']);
             }

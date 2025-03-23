@@ -65,7 +65,7 @@
                   </div>
 
                   <form class="row g-3 needs-validation" method="POST" action="{{ route('verifier-connexion') }}" novalidate>
-
+                    @csrf
                     <div class="col-12">
                       <label for="yourUsername" class="form-label">Username</label>
                       <div class="input-group has-validation">
