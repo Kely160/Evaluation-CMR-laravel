@@ -1,6 +1,6 @@
 @extends('template')
 
-@section('page-title', 'Détails du ' . ucfirst($type))
+@section('page-title', 'Détails budget')
 
 @section('content')
 <div class="pagetitle">
@@ -18,10 +18,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">
-                        Détails <strong>{{ ucfirst($type) }}</strong>
-                        @if (isset($month))
-                            pour le mois de <strong>{{ $month }}</strong>
-                        @endif
+                        Détails budget
                     </h5>
 
                     <div class="table-responsive">
@@ -33,33 +30,16 @@
                                     <th scope="col">Description</th>
                                     <th scope="col">Montant</th>
                                     <th scope="col">Date</th>
-                                    <th scope="col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($details as $detail)
                                     <tr>
-                                        <td>{{ $detail['ticketId'] ?? $detail['leadId'] ?? 'N/A' }}</td>
+                                        <td>{{ $detail['id']}}</td>
                                         <td>{{ $detail['customer']['name']}}</td>
-                                        <td>{{ $detail['name'] ?? $detail['subject'] ?? 'Aucune description' }}</td>
-                                        <td class="text-end">{{ number_format($detail['depense']['montant'] ?? 0, 0, ',', ' ') }} Ar</td>
-                                        <td>{{ date('d/m/Y', strtotime($detail['createdAt'])) }}</td>
-                                        <td>
-                                            <button class="btn btn-warning btn-sm mb-1" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#editModal" 
-                                                    onclick="openModal('{{ $detail['depense']['id'] ?? '' }}', '{{ $detail['depense']['montant'] ?? 0 }}')">
-                                                <i class="bi bi-pencil-square"></i> Modifier
-                                            </button>
-
-                                            <form action="{{ route('details.destroy', ['type' => $type, 'id' => $detail['ticketId'] ?? $detail['leadId']]) }}" method="POST" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet élément ?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm">
-                                                    <i class="bi bi-trash"></i> Supprimer
-                                                </button>
-                                            </form>
-                                        </td>
+                                        <td>{{ $detail['description'] ?? 'Aucune description' }}</td>
+                                        <td class="text-end">{{ number_format($detail['montant'] ?? 0, 0, ',', ' ') }}</td>
+                                        <td>{{ date('d/m/Y', strtotime($detail['dateCreation'])) }}</td>
                                     </tr>
                                 @empty
                                     <tr>

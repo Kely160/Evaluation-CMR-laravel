@@ -3,7 +3,7 @@
     <ul class="sidebar-nav" id="sidebar-nav">
 
       <li class="nav-item">
-        <a class="nav-link " href="index.html">
+        <a class="nav-link " href="{{ route('dashboard') }}">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
@@ -90,8 +90,8 @@
       <li class="nav-heading">Pages</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="{{ route()'formulaire-modification-taux' }}">
-          <i class="bi bi-person"></i>
+        <a class="nav-link collapsed" href="{{ route('formulaire-modification-taux') }}">
+          <i class="bi bi-gear"></i>
           <span>Configuration taux d'alerte</span>
         </a>
       </li>

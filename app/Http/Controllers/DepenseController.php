@@ -24,7 +24,6 @@ class DepenseController extends Controller
                 'montant' => $montant,
             ]);
             
-            dd ($response->body());
             if ($response->successful()) {
                 return redirect()->back()->with('success', 'Montant mis à jour avec succès.');
             } else {
@@ -32,7 +31,6 @@ class DepenseController extends Controller
                 return back()->with('error', "Échec de la mise à jour : $errorMessage");
             }
         } catch (\Exception $e) {
-            dd($e->getMessage());
             return back()->with('error', 'Erreur de connexion à l\'API : ' . $e->getMessage());
         }
     }    
