@@ -8,7 +8,8 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         $customers = Http::get("http://localhost:8080/api/admin/client");
         $tickets = Http::get("http://localhost:8080/api/admin/ticket");
         $leads = Http::get("http://localhost:8080/api/admin/lead");
@@ -18,6 +19,7 @@ class DashboardController extends Controller
         $totalMontantLead = 0;
         $montantParMoisTicket = [];
         $montantParMoisLead = [];
+        $statutLeads = [];
 
         $now = now();
         $startOfYear = $now->copy()->startOfYear(); // 1er Janvier de l'année en cours
@@ -33,13 +35,13 @@ class DashboardController extends Controller
             $ticketData = $tickets->json();
             if (is_array($ticketData)) {
                 $groupedTickets = collect($ticketData)
-                    ->groupBy(function($ticket) {
+                    ->groupBy(function ($ticket) {
                         return date('Y-m', strtotime($ticket['createdAt']));
                     });
 
                 // ✅ Additionne les montants par mois
-                $ticketSums = $groupedTickets->map(function($items) {
-                    return $items->sum(function($ticket) {
+                $ticketSums = $groupedTickets->map(function ($items) {
+                    return $items->sum(function ($ticket) {
                         return isset($ticket['depense']['montant']) ? $ticket['depense']['montant'] : 0;
                     });
                 })->toArray();
@@ -55,16 +57,23 @@ class DashboardController extends Controller
             $leadData = $leads->json();
             if (is_array($leadData)) {
                 $groupedLeads = collect($leadData)
-                    ->groupBy(function($lead) {
+                    ->groupBy(function ($lead) {
                         return date('Y-m', strtotime($lead['createdAt']));
                     });
 
                 // ✅ Additionne les montants par mois
-                $leadSums = $groupedLeads->map(function($items) {
-                    return $items->sum(function($lead) {
+                $leadSums = $groupedLeads->map(function ($items) {
+                    return $items->sum(function ($lead) {
                         return isset($lead['depense']['montant']) ? $lead['depense']['montant'] : 0;
                     });
                 })->toArray();
+
+                $statutLeads = collect($leadData)
+                    ->groupBy('status')
+                    ->map(function ($items) {
+                        return count($items);
+                    })
+                    ->toArray();
 
                 // ✅ Fusionne avec tous les mois de l'année
                 $montantParMoisLead = array_merge($months, $leadSums);
@@ -76,33 +85,36 @@ class DashboardController extends Controller
             'totalMontantTicket',
             'totalMontantLead',
             'montantParMoisTicket',
-            'montantParMoisLead'
+            'montantParMoisLead',
+            'statutLeads'
         ));
     }
 
-    public function details($type, $month) {
+    public function details($type, $month)
+    {
         $apiUrl = "http://localhost:8080/api/admin/";
         $response = Http::get($apiUrl . ($type === 'tickets' ? 'ticket' : 'lead'));
-    
+
         $details = [];
         if ($response->successful()) {
             $data = $response->json();
-            $details = collect($data)->filter(function($item) use ($month) {
+            $details = collect($data)->filter(function ($item) use ($month) {
                 return date('Y-m', strtotime($item['createdAt'])) === $month;
             });
         }
-        
-        return view('dashboard.details', compact('details', 'type', 'month'));
-    }    
 
-    public function destroy($type, $id) {
+        return view('dashboard.details', compact('details', 'type', 'month'));
+    }
+
+    public function destroy($type, $id)
+    {
         $apiUrl = "http://localhost:8080/api/admin/" . ($type === 'tickets' ? 'ticket' : 'lead') . "/delete/$id";
         $response = Http::post($apiUrl);
-    
+
         if ($response->successful()) {
             return redirect()->route('dashboard')->with('success', 'Détail supprimé avec succès.');
         } else {
             return back()->with('error', 'Échec de la suppression. Veuillez réessayer.');
         }
-    }    
+    }
 }
