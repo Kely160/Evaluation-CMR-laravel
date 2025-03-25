@@ -40,7 +40,7 @@
     </div>
 
     <div class="row mt-4">
-        <div class="col-md-6 mb-4">
+        <div class="col-md-4 mb-4">
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Montants par mois</h5>
@@ -49,7 +49,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 mb-4">
+        <div class="col-md-4 mb-4">
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Dépenses et Budgets par Client</h5>
@@ -57,17 +57,26 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Répartition des dépenses</h5>
+                    <canvas id="depensePieChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{{ $totalDepense }}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    // ✅ Données pour les montants par mois
     const labels = {!! json_encode(array_keys($montantParMoisTicket)) !!};
     const montantTicket = {!! json_encode(array_values($montantParMoisTicket)) !!};
     const montantLead = {!! json_encode(array_values($montantParMoisLead)) !!};
-
+    
     const ctx = document.getElementById('montantChart').getContext('2d');
     new Chart(ctx, {
         type: 'line',
@@ -126,6 +135,34 @@
             responsive: true,
             scales: { y: { beginAtZero: true } }
         }
+    });
+
+    
+    const totalDepense = {!! $totalDepense !!};
+    const totalTicket = {!! $totalMontantTicket !!};
+    const totalLead = {!! $totalMontantLead !!};
+    const autre = totalDepense - (totalTicket + totalLead);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        new Chart(document.querySelector('#depensePieChart'), {
+            type: 'pie',
+            data: {
+                labels: [
+                    'Dépense sur les tickets',
+                    'Dépense sur les leads',
+                    'Autre'
+                ],
+                datasets: [{
+                    data: [totalTicket, totalLead, autre],
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)',
+                        'rgb(255, 205, 86)'
+                    ],
+                    hoverOffset: 4
+                }]
+            }
+        });
     });
 </script>
 @endsection

@@ -17,6 +17,7 @@ class DashboardController extends Controller
         $depenses = Http::get("http://localhost:8080/api/admin/depense");
 
         $totalBudget = 0;
+        $totalDepense = 0;
         $totalMontantTicket = 0;
         $totalMontantLead = 0;
         $montantParMoisTicket = [];
@@ -38,6 +39,15 @@ class DashboardController extends Controller
                 $totalBudget = array_sum(array_map(function ($budget) {
                     return $budget['montant'] ?? 0;
                 }, $budgetData));
+            }
+        }
+
+        if ($depenses->successful()) {
+            $depenseData = $depenses->json();
+            if (is_array($depenseData)) {
+                $totalDepense = array_sum(array_map(function ($depense) {
+                    return $depense['montant'] ?? 0;
+                }, $depenseData));
             }
         }
 
@@ -117,6 +127,7 @@ class DashboardController extends Controller
 
         return view('dashboard.dashboard', compact(
             'totalBudget',
+            'totalDepense',
             'totalMontantTicket',
             'totalMontantLead',
             'montantParMoisTicket',
