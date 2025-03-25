@@ -14,23 +14,43 @@ class DashboardController extends Controller
         $tickets = Http::get("http://localhost:8080/api/admin/ticket");
         $leads = Http::get("http://localhost:8080/api/admin/lead");
         $budgets = Http::get("http://localhost:8080/api/admin/budget");
+        $depenses = Http::get("http://localhost:8080/api/admin/depense");
 
+        $totalBudget = 0;
+        $totalDepense = 0;
         $totalMontantTicket = 0;
         $totalMontantLead = 0;
         $montantParMoisTicket = [];
         $montantParMoisLead = [];
         $statutLeads = [];
+        $budgetDepenseParClient = [];
 
         $now = now();
-        $startOfYear = $now->copy()->startOfYear(); // 1er Janvier de l'année en cours
+        $startOfYear = $now->copy()->startOfYear();
         $months = [];
 
-        // ✅ Génère tous les mois de Janvier à Décembre
         for ($i = 0; $i < 12; $i++) {
             $months[$startOfYear->copy()->addMonths($i)->format('Y-m')] = 0;
         }
 
-        // ✅ Groupement des montants de tickets
+        if ($budgets->successful()) {
+            $budgetData = $budgets->json();
+            if (is_array($budgetData)) {
+                $totalBudget = array_sum(array_map(function ($budget) {
+                    return $budget['montant'] ?? 0;
+                }, $budgetData));
+            }
+        }
+
+        if ($depenses->successful()) {
+            $depenseData = $depenses->json();
+            if (is_array($depenseData)) {
+                $totalDepense = array_sum(array_map(function ($depense) {
+                    return $depense['montant'] ?? 0;
+                }, $depenseData));
+            }
+        }
+
         if ($tickets->successful()) {
             $ticketData = $tickets->json();
             if (is_array($ticketData)) {
@@ -39,20 +59,17 @@ class DashboardController extends Controller
                         return date('Y-m', strtotime($ticket['createdAt']));
                     });
 
-                // ✅ Additionne les montants par mois
                 $ticketSums = $groupedTickets->map(function ($items) {
                     return $items->sum(function ($ticket) {
                         return isset($ticket['depense']['montant']) ? $ticket['depense']['montant'] : 0;
                     });
                 })->toArray();
 
-                // ✅ Fusionne avec tous les mois de l'année
                 $montantParMoisTicket = array_merge($months, $ticketSums);
                 $totalMontantTicket = array_sum($montantParMoisTicket);
             }
         }
 
-        // ✅ Groupement des montants de leads
         if ($leads->successful()) {
             $leadData = $leads->json();
             if (is_array($leadData)) {
@@ -61,7 +78,6 @@ class DashboardController extends Controller
                         return date('Y-m', strtotime($lead['createdAt']));
                     });
 
-                // ✅ Additionne les montants par mois
                 $leadSums = $groupedLeads->map(function ($items) {
                     return $items->sum(function ($lead) {
                         return isset($lead['depense']['montant']) ? $lead['depense']['montant'] : 0;
@@ -75,19 +91,76 @@ class DashboardController extends Controller
                     })
                     ->toArray();
 
-                // ✅ Fusionne avec tous les mois de l'année
                 $montantParMoisLead = array_merge($months, $leadSums);
                 $totalMontantLead = array_sum($montantParMoisLead);
+            }
+        }   
+
+        if ($budgets->successful() && $customers->successful() && $depenses->successful()) {
+            $budgetData = $budgets->json();
+            $depenseData = $depenses->json();
+            $customerData = $customers->json();
+    
+            $totalBudget = array_sum(array_column($budgetData, 'montant'));
+            
+            // 🏷️ Initialisation des données par client
+            foreach ($customerData as $customer) {
+                $clientId = $customer['customerId'];
+                $budgetDepenseParClient[$customer['name']] = [
+                    'budget' => 0,
+                    'depense' => 0,
+                ];
+            }
+    
+            // 🏷️ Agrégation des budgets par client
+            foreach ($budgetData as $budget) {
+                $clientName = $budget['customer']['name'] ?? 'Inconnu';
+                $budgetDepenseParClient[$clientName]['budget'] += $budget['montant'] ?? 0;
+            }
+    
+            // 🏷️ Agrégation des dépenses par client
+            foreach ($depenseData as $depense) {
+                $clientName = $depense['customer']['name'] ?? 'Inconnu';
+                $budgetDepenseParClient[$clientName]['depense'] += $depense['montant'] ?? 0;
             }
         }
 
         return view('dashboard.dashboard', compact(
+            'totalBudget',
+            'totalDepense',
             'totalMontantTicket',
             'totalMontantLead',
             'montantParMoisTicket',
             'montantParMoisLead',
-            'statutLeads'
+            'statutLeads',
+            'budgetDepenseParClient'
         ));
+    }
+
+    public function detailsTotal($type)
+    {
+        $apiUrl = "http://localhost:8080/api/admin/";
+        $response = Http::get($apiUrl . ($type === 'tickets' ? 'ticket' : 'lead'));
+
+        $details = [];
+        if ($response->successful()) {
+            $details = $response->json();
+        }
+
+        return view('dashboard.details', compact('details', 'type'));
+    }
+
+    public function detailsBudget()
+    {
+        $apiUrl = "http://localhost:8080/api/admin/";
+        $response = Http::get($apiUrl . 'budget');
+
+        $details = [];
+        if ($response->successful()) {
+            $details = $response->json();
+        }
+
+        return view('budget.details-budget', compact('details'));
     }
 
     public function details($type, $month)
